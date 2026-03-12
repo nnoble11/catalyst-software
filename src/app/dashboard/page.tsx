@@ -1,13 +1,12 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Rocket, TrendingUp, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { SignOutButton } from "@/components/sign-out-button";
 import { MobileNav } from "@/components/mobile-nav";
 import { STAGE_LABELS, type StartupStage } from "@/lib/types";
+import { Logo } from "@/components/logo";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -26,8 +25,7 @@ export default async function DashboardPage() {
     .eq("id", user.id)
     .single();
 
-  // Fetch founder's startups
-  let startups: { id: string; name: string; one_liner: string | null; stage: string; momentum_score: number; industries: string[] }[] = [];
+  let startups: { id: string; name: string; one_liner: string | null; stage: string; industries: string[] }[] = [];
   if (profile?.role === "founder") {
     const { data: founderLinks } = await supabase
       .from("startup_founders")
@@ -38,66 +36,61 @@ export default async function DashboardPage() {
       const startupIds = founderLinks.map((l) => l.startup_id);
       const { data } = await supabase
         .from("startups")
-        .select("id, name, one_liner, stage, momentum_score, industries")
+        .select("id, name, one_liner, stage, industries")
         .in("id", startupIds);
       startups = data || [];
     }
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="relative flex items-center justify-between border-b px-4 py-4 sm:px-8">
+    <div className="min-h-screen bg-background system-grid-bg">
+      {/* System toolbar header */}
+      <header className="relative flex items-center justify-between border-b border-border px-4 py-4 sm:px-8" style={{ boxShadow: "0 1px 12px oklch(0.65 0.2 45 / 3%)" }}>
         <div className="flex items-center gap-4">
-          <div className="text-xl font-bold">Catalyst Labs</div>
+          <Logo />
           <MobileNav
             links={
               profile?.role === "founder"
-                ? [
-                    { href: "/dashboard", label: "Dashboard" },
-                    { href: "/accelerators", label: "Accelerators" },
-                    { href: "/applications", label: "Applications" },
-                    { href: "/messages", label: "Messages" },
-                  ]
+                ? [{ href: "/dashboard", label: "Dashboard" }]
                 : profile?.role === "vc"
                 ? [
                     { href: "/dashboard", label: "Dashboard" },
                     { href: "/deals", label: "Deal Flow" },
-                    { href: "/accelerator/manage", label: "Programs" },
-                    { href: "/lists", label: "Lists" },
-                    { href: "/messages", label: "Messages" },
                   ]
                 : [
                     { href: "/admin/analytics", label: "Analytics" },
                     { href: "/admin/users", label: "Users" },
-                    { href: "/admin/interactions", label: "Interactions" },
-                    { href: "/admin/momentum", label: "Momentum" },
                   ]
             }
           />
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            {profile?.full_name || user.email}
-          </span>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden items-center gap-2 sm:flex">
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500/60" />
+            <span className="text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground">
+              {profile?.full_name || user.email}
+            </span>
+          </div>
           <SignOutButton />
         </div>
       </header>
 
-      {/* Content */}
       <main className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
-        <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
+        <div className="mb-2 flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-primary/50 animate-pulse" />
+          <span className="system-label">control panel</span>
+        </div>
+        <h1 className="mb-8 text-2xl font-bold uppercase tracking-[0.05em]">Dashboard</h1>
 
         {profile?.role === "founder" && (
           <div className="space-y-6">
-            {/* Startups list */}
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Your Startups</h2>
+              <h2 className="system-label text-sm">Your Startups</h2>
               <Link href="/startup/create">
-                <Button size="sm" className="gap-1">
-                  <Plus className="h-4 w-4" />
+                <button className="flex items-center gap-1.5 border border-primary/30 bg-transparent px-3 py-1.5 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
+                  <Plus className="h-3 w-3" />
                   New Startup
-                </Button>
+                </button>
               </Link>
             </div>
 
@@ -105,189 +98,86 @@ export default async function DashboardPage() {
               <div className="grid gap-4 md:grid-cols-2">
                 {startups.map((startup) => (
                   <Link key={startup.id} href={`/startup/${startup.id}`}>
-                    <Card className="transition-colors hover:bg-muted/50 cursor-pointer">
-                      <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                          <span>{startup.name}</span>
-                          <Badge variant="outline">
-                            {STAGE_LABELS[startup.stage as StartupStage]}
+                    <div className="rounded-lg border border-border bg-card p-5 transition-all hover:border-primary/15 system-glow-hover cursor-pointer">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-medium">{startup.name}</span>
+                        <Badge variant="outline" className="text-[0.6rem] uppercase tracking-wider">
+                          {STAGE_LABELS[startup.stage as StartupStage]}
+                        </Badge>
+                      </div>
+                      {startup.one_liner && (
+                        <p className="text-xs text-muted-foreground mb-3">
+                          {startup.one_liner}
+                        </p>
+                      )}
+                      <div className="flex gap-1">
+                        {startup.industries?.slice(0, 3).map((ind) => (
+                          <Badge key={ind} variant="outline" className="text-[0.6rem]">
+                            {ind}
                           </Badge>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        {startup.one_liner && (
-                          <p className="text-sm text-muted-foreground mb-3">
-                            {startup.one_liner}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between">
-                          <div className="flex gap-1">
-                            {startup.industries?.slice(0, 3).map((ind) => (
-                              <Badge key={ind} variant="outline" className="text-xs">
-                                {ind}
-                              </Badge>
-                            ))}
-                          </div>
-                          <div className="flex items-center gap-1 text-sm">
-                            <TrendingUp className="h-3 w-3" />
-                            <span className="font-medium">
-                              {startup.momentum_score > 0
-                                ? startup.momentum_score.toFixed(0)
-                                : "--"}
-                            </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        ))}
+                      </div>
+                    </div>
                   </Link>
                 ))}
               </div>
             ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center py-12 text-center">
-                  <Rocket className="mb-4 h-12 w-12 text-muted-foreground" />
-                  <h3 className="mb-2 font-semibold">No startups yet</h3>
-                  <p className="mb-4 text-sm text-muted-foreground">
-                    Create your first startup profile to get started.
-                  </p>
-                  <Link href="/startup/create">
-                    <Button className="gap-1">
-                      <Plus className="h-4 w-4" />
-                      Create Startup Profile
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Quick links */}
-            <div className="flex gap-3">
-              <Link href="/messages">
-                <Button variant="outline" size="sm">Messages</Button>
-              </Link>
-            </div>
-
-            {/* Accelerator Marketplace teaser */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Accelerator Marketplace</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">
-                  Browse accelerator programs and apply with 1 click.
+              <div className="rounded-lg border border-border bg-card p-12 text-center system-glow">
+                <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4">
+                  No startups registered
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <Link href="/accelerators">
-                    <Button variant="outline" size="sm">
-                      Browse Accelerators
-                    </Button>
-                  </Link>
-                  <Link href="/applications">
-                    <Button variant="outline" size="sm">
-                      My Applications
-                    </Button>
-                  </Link>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-muted-foreground mb-6">
+                  Create your first startup profile to get started.
+                </p>
+                <Link href="/startup/create">
+                  <button className="inline-flex items-center gap-1.5 border border-primary/30 bg-transparent px-4 py-2 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
+                    <Plus className="h-3 w-3" />
+                    Create Startup Profile
+                  </button>
+                </Link>
+              </div>
+            )}
           </div>
         )}
 
         {profile?.role === "vc" && (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Deal Flow</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Browse student startups and track your pipeline.
-                </p>
-                <Link href="/deals">
-                  <Button className="mt-4">View Deal Table</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Accelerator Programs</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  List your accelerator program and receive 1-click applications.
-                </p>
-                <Link href="/accelerator/manage">
-                  <Button className="mt-4" variant="outline">
-                    Manage Programs
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Saved Lists</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Organize startups into custom lists.
-                </p>
-                <Link href="/lists">
-                  <Button className="mt-4" variant="outline">
-                    View Lists
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Messages</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Chat with founders.
-                </p>
-                <Link href="/messages">
-                  <Button className="mt-4" variant="outline">
-                    View Messages
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+          <div className="rounded-lg border border-border bg-card p-8 system-glow">
+            <h2 className="system-label text-sm mb-3">Deal Flow</h2>
+            <p className="text-xs text-muted-foreground mb-6">
+              Browse student startups and discover your next investment.
+            </p>
+            <Link href="/deals">
+              <button className="border border-primary/30 bg-transparent px-5 py-2.5 text-xs font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5 hover:shadow-[0_0_20px_oklch(0.65_0.2_45/10%)]">
+                Enter Deal Flow →
+              </button>
+            </Link>
           </div>
         )}
 
         {profile?.role === "admin" && (
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Analytics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link href="/admin/analytics">
-                  <Button>View Analytics</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link href="/admin/users">
-                  <Button>Manage Users</Button>
-                </Link>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Momentum Config</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Link href="/admin/momentum">
-                  <Button>Configure</Button>
-                </Link>
-              </CardContent>
-            </Card>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="rounded-lg border border-border bg-card p-8 system-glow-hover transition-all">
+              <h2 className="system-label text-sm mb-3">Analytics Module</h2>
+              <p className="text-xs text-muted-foreground mb-6">
+                Platform metrics and insights.
+              </p>
+              <Link href="/admin/analytics">
+                <button className="border border-primary/30 bg-transparent px-4 py-2 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
+                  View Analytics →
+                </button>
+              </Link>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-8 system-glow-hover transition-all">
+              <h2 className="system-label text-sm mb-3">User Registry</h2>
+              <p className="text-xs text-muted-foreground mb-6">
+                Manage platform users and roles.
+              </p>
+              <Link href="/admin/users">
+                <button className="border border-primary/30 bg-transparent px-4 py-2 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
+                  Manage Users →
+                </button>
+              </Link>
+            </div>
           </div>
         )}
       </main>

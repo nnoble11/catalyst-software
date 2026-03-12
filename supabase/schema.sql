@@ -310,6 +310,14 @@ create policy "VCs can insert interactions" on vc_interactions
   for insert with check (auth.uid() = vc_user_id);
 create policy "VCs can view own interactions" on vc_interactions
   for select using (auth.uid() = vc_user_id);
+create policy "Admins can view all interactions" on vc_interactions
+  for select using (
+    exists (
+      select 1 from profiles
+      where profiles.id = auth.uid()
+      and profiles.role = 'admin'
+    )
+  );
 
 -- Conversations: participants only
 create policy "Participants can view conversations" on conversations
@@ -322,10 +330,24 @@ create policy "Participants can view conversations" on conversations
   );
 create policy "Authenticated can create conversations" on conversations
   for insert with check (auth.role() = 'authenticated');
+create policy "Participants can update conversations" on conversations
+  for update using (
+    exists (
+      select 1 from conversation_participants
+      where conversation_participants.conversation_id = id
+      and conversation_participants.user_id = auth.uid()
+    )
+  );
 
--- Conversation participants
-create policy "Can view own participation" on conversation_participants
-  for select using (user_id = auth.uid());
+-- Conversation participants: can see all participants in conversations you belong to
+create policy "Can view participants in own conversations" on conversation_participants
+  for select using (
+    exists (
+      select 1 from conversation_participants cp
+      where cp.conversation_id = conversation_participants.conversation_id
+      and cp.user_id = auth.uid()
+    )
+  );
 create policy "Can insert participants" on conversation_participants
   for insert with check (auth.role() = 'authenticated');
 
@@ -342,6 +364,14 @@ create policy "Participants can send messages" on messages
   for insert with check (
     auth.uid() = sender_id
     and exists (
+      select 1 from conversation_participants
+      where conversation_participants.conversation_id = messages.conversation_id
+      and conversation_participants.user_id = auth.uid()
+    )
+  );
+create policy "Participants can mark messages as read" on messages
+  for update using (
+    exists (
       select 1 from conversation_participants
       where conversation_participants.conversation_id = messages.conversation_id
       and conversation_participants.user_id = auth.uid()

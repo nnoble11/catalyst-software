@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { SignOutButton } from "@/components/sign-out-button";
 import { DealTable } from "@/components/deal-table";
 import Link from "next/link";
+import { Logo } from "@/components/logo";
 
 export default async function DealsPage() {
   const supabase = await createClient();
@@ -15,27 +16,10 @@ export default async function DealsPage() {
     redirect("/login");
   }
 
-  // Fetch all startups
   const { data: startups } = await supabase
     .from("startups")
     .select("*")
-    .order("momentum_score", { ascending: false });
-
-  // Fetch user's bookmark list items for quick reference
-  const { data: bookmarkLists } = await supabase
-    .from("bookmark_lists")
-    .select("id, name")
-    .eq("vc_user_id", user.id);
-
-  const listIds = bookmarkLists?.map((l) => l.id) || [];
-  let bookmarkedStartupIds: string[] = [];
-  if (listIds.length > 0) {
-    const { data: items } = await supabase
-      .from("bookmark_list_items")
-      .select("startup_id")
-      .in("list_id", listIds);
-    bookmarkedStartupIds = items?.map((i) => i.startup_id) || [];
-  }
+    .order("created_at", { ascending: false });
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -44,51 +28,40 @@ export default async function DealsPage() {
     .single();
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="flex items-center justify-between border-b px-4 py-4 sm:px-8">
+    <div className="min-h-screen bg-background system-grid-bg">
+      <header className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-8" style={{ boxShadow: "0 1px 12px oklch(0.65 0.2 45 / 3%)" }}>
         <div className="flex items-center gap-4 sm:gap-6">
-          <Link href="/dashboard" className="text-xl font-bold">
-            Catalyst Labs
-          </Link>
-          <nav className="hidden gap-4 text-sm sm:flex">
-            <Link href="/deals" className="font-medium">
+          <Logo />
+          <nav className="hidden gap-4 text-xs sm:flex">
+            <Link href="/deals" className="font-medium uppercase tracking-[0.1em] text-primary/80">
               Deal Table
-            </Link>
-            <Link
-              href="/lists"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Lists
-            </Link>
-            <Link
-              href="/messages"
-              className="text-muted-foreground hover:text-foreground"
-            >
-              Messages
             </Link>
           </nav>
         </div>
-        <div className="flex items-center gap-2 sm:gap-4">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            {profile?.full_name}
-          </span>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="hidden items-center gap-2 sm:flex">
+            <div className="h-1.5 w-1.5 rounded-full bg-green-500/60" />
+            <span className="text-[0.625rem] uppercase tracking-[0.1em] text-muted-foreground">
+              {profile?.full_name}
+            </span>
+          </div>
           <SignOutButton />
         </div>
       </header>
 
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-8">
+        <div className="mb-2 flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-primary/50 animate-pulse" />
+          <span className="system-label">data terminal</span>
+        </div>
         <div className="mb-6">
-          <h1 className="text-2xl font-bold">Deal Flow</h1>
-          <p className="text-sm text-muted-foreground">
-            {startups?.length || 0} startups on the platform
+          <h1 className="text-xl font-bold uppercase tracking-[0.05em]">Deal Flow</h1>
+          <p className="text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground mt-1">
+            {startups?.length || 0} nodes indexed
           </p>
         </div>
 
-        <DealTable
-          startups={startups || []}
-          bookmarkedIds={bookmarkedStartupIds}
-          userId={user.id}
-        />
+        <DealTable startups={startups || []} />
       </main>
     </div>
   );

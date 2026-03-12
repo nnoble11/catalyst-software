@@ -18,7 +18,6 @@ import {
   Globe,
   GraduationCap,
   MapPin,
-  TrendingUp,
   Users,
 } from "lucide-react";
 import { CreateUpdateForm } from "@/components/create-update-form";
@@ -181,24 +180,6 @@ export default async function StartupProfilePage({
 
           {/* Right column — Sidebar */}
           <div className="space-y-6">
-            {/* Momentum */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-4 w-4" />
-                  Momentum Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold">
-                  {startup.momentum_score > 0
-                    ? startup.momentum_score.toFixed(0)
-                    : "--"}
-                </p>
-                <p className="text-xs text-muted-foreground">out of 100</p>
-              </CardContent>
-            </Card>
-
             {/* Details */}
             <Card>
               <CardHeader>

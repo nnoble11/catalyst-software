@@ -1,8 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -18,12 +16,9 @@ import {
   Globe,
   GraduationCap,
   MapPin,
-  MessageSquare,
-  TrendingUp,
   Users,
   FileText,
 } from "lucide-react";
-import { ContactFounderButton } from "@/components/contact-founder-button";
 
 export default async function VCStartupDetailPage({
   params,
@@ -41,14 +36,6 @@ export default async function VCStartupDetailPage({
     redirect("/login");
   }
 
-  // Log view interaction
-  await supabase.from("vc_interactions").insert({
-    vc_user_id: user.id,
-    startup_id: id,
-    interaction_type: "view",
-  });
-
-  // Fetch startup
   const { data: startup } = await supabase
     .from("startups")
     .select("*")
@@ -59,7 +46,6 @@ export default async function VCStartupDetailPage({
     notFound();
   }
 
-  // Fetch founders
   const { data: founderLinks } = await supabase
     .from("startup_founders")
     .select("founder_id, role")
@@ -85,7 +71,6 @@ export default async function VCStartupDetailPage({
     }));
   }
 
-  // Fetch updates
   const { data: updates } = await supabase
     .from("updates")
     .select("*, author:profiles(full_name)")
@@ -93,67 +78,52 @@ export default async function VCStartupDetailPage({
     .order("created_at", { ascending: false })
     .limit(20);
 
-  // Get primary founder ID for messaging
-  const primaryFounder = founderLinks?.find((f) => f.role === "primary");
-  const primaryFounderId = primaryFounder?.founder_id || founderIds[0];
-
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b px-8 py-4">
+    <div className="min-h-screen bg-background system-grid-bg">
+      <header className="border-b border-border px-8 py-4" style={{ boxShadow: "0 1px 12px oklch(0.65 0.2 45 / 3%)" }}>
         <div className="mx-auto flex max-w-6xl items-center gap-4">
           <Link href="/deals">
-            <Button variant="ghost" size="sm" className="gap-1">
-              <ArrowLeft className="h-4 w-4" />
-              Back to Deal Table
-            </Button>
+            <button className="flex items-center gap-1.5 text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowLeft className="h-3.5 w-3.5" />
+              Return to Index
+            </button>
           </Link>
         </div>
       </header>
 
       <main className="mx-auto max-w-6xl px-8 py-8">
         <div className="grid gap-8 lg:grid-cols-3">
-          {/* Main content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Header */}
             <div>
-              <div className="flex items-start justify-between">
-                <div>
-                  <h1 className="text-3xl font-bold">{startup.name}</h1>
-                  {startup.one_liner && (
-                    <p className="mt-1 text-lg text-muted-foreground">
-                      {startup.one_liner}
-                    </p>
-                  )}
-                </div>
-                <ContactFounderButton
-                  startupId={id}
-                  founderId={primaryFounderId}
-                  vcUserId={user.id}
-                  startupName={startup.name}
-                />
+              <div className="mb-2 flex items-center gap-2">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
+                <span className="system-label">startup profile</span>
               </div>
-
+              <h1 className="text-2xl font-bold">{startup.name}</h1>
+              {startup.one_liner && (
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {startup.one_liner}
+                </p>
+              )}
               <div className="mt-4 flex flex-wrap gap-2">
-                <Badge>{STAGE_LABELS[startup.stage as StartupStage]}</Badge>
+                <Badge className="text-[0.6rem] uppercase tracking-wider">{STAGE_LABELS[startup.stage as StartupStage]}</Badge>
                 {startup.industries?.map((ind: string) => (
-                  <Badge key={ind} variant="outline">
+                  <Badge key={ind} variant="outline" className="text-[0.6rem]">
                     {ind}
                   </Badge>
                 ))}
               </div>
             </div>
 
-            {/* Description */}
             {startup.description && (
               <div>
-                <h2 className="mb-2 font-semibold">About</h2>
-                <p className="text-muted-foreground whitespace-pre-wrap">
+                <h2 className="system-label text-xs mb-2">About</h2>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
                   {startup.description}
                 </p>
               </div>
             )}
 
-            {/* Pitch deck */}
             {startup.pitch_deck_url && (
               <div>
                 <a
@@ -161,95 +131,72 @@ export default async function VCStartupDetailPage({
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  <Button variant="outline" className="gap-2">
-                    <FileText className="h-4 w-4" />
+                  <button className="flex items-center gap-2 border border-border bg-transparent px-4 py-2 text-[0.65rem] uppercase tracking-[0.1em] text-foreground/70 transition-all hover:border-primary/30 hover:text-primary">
+                    <FileText className="h-3.5 w-3.5" />
                     View Pitch Deck
                     <ExternalLink className="h-3 w-3" />
-                  </Button>
+                  </button>
                 </a>
               </div>
             )}
 
-            <Separator />
+            <Separator className="opacity-30" />
 
-            {/* Updates feed */}
+            {/* Updates as system log entries */}
             <div>
-              <h2 className="mb-4 font-semibold text-lg">Updates</h2>
+              <h2 className="system-label text-xs mb-4">Activity Log</h2>
               {updates && updates.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {updates.map((update) => (
-                    <Card key={update.id}>
-                      <CardContent className="pt-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-xs">
-                            {UPDATE_TYPE_LABELS[update.update_type as UpdateType]}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {update.author?.full_name} &middot;{" "}
-                            {new Date(update.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                        <p className="text-sm whitespace-pre-wrap">
-                          {update.content}
-                        </p>
-                      </CardContent>
-                    </Card>
+                    <div key={update.id} className="rounded-lg border border-border bg-card p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Badge variant="outline" className="text-[0.55rem] uppercase tracking-wider">
+                          {UPDATE_TYPE_LABELS[update.update_type as UpdateType]}
+                        </Badge>
+                        <span className="text-[0.6rem] text-muted-foreground">
+                          {update.author?.full_name} &middot;{" "}
+                          {new Date(update.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-xs whitespace-pre-wrap text-foreground/80">
+                        {update.content}
+                      </p>
+                    </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">
-                  No updates yet.
+                <p className="text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
+                  No activity logged
                 </p>
               )}
             </div>
           </div>
 
-          {/* Sidebar */}
+          {/* Sidebar system modules */}
           <div className="space-y-6">
-            {/* Momentum */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <TrendingUp className="h-4 w-4" />
-                  Momentum Score
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-4xl font-bold">
-                  {startup.momentum_score > 0
-                    ? startup.momentum_score.toFixed(0)
-                    : "--"}
-                </p>
-                <p className="text-xs text-muted-foreground">out of 100</p>
-              </CardContent>
-            </Card>
-
-            {/* Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+            <div className="rounded-lg border border-border bg-card p-5 system-glow">
+              <h3 className="system-label text-xs mb-4">Details</h3>
+              <div className="space-y-3 text-xs">
                 {startup.school && (
                   <div className="flex items-center gap-2">
-                    <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                    <GraduationCap className="h-3.5 w-3.5 text-muted-foreground" />
                     {startup.school}
                   </div>
                 )}
                 {startup.location && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
                     {startup.location}
                   </div>
                 )}
                 {startup.website_url && (
                   <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" />
                     <a
                       href={startup.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="text-primary/80 hover:text-primary transition-colors"
                     >
                       Website
                       <ExternalLink className="ml-1 inline h-3 w-3" />
@@ -257,12 +204,12 @@ export default async function VCStartupDetailPage({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-3.5 w-3.5 text-muted-foreground" />
                   {startup.team_size} team member{startup.team_size !== 1 && "s"}
                 </div>
                 {startup.founding_date && (
                   <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                     Founded{" "}
                     {new Date(startup.founding_date).toLocaleDateString(
                       "en-US",
@@ -276,20 +223,17 @@ export default async function VCStartupDetailPage({
                     {Number(startup.funding_raised).toLocaleString()} raised
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Team */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Team</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="rounded-lg border border-border bg-card p-5 system-glow">
+              <h3 className="system-label text-xs mb-4">Team</h3>
+              <div className="space-y-3">
                 {founders.map((founder) => (
-                  <div key={founder.id} className="text-sm">
+                  <div key={founder.id} className="text-xs">
                     <p className="font-medium">{founder.full_name}</p>
                     {founder.role_title && (
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[0.65rem] text-muted-foreground">
                         {founder.role_title}
                       </p>
                     )}
@@ -298,7 +242,7 @@ export default async function VCStartupDetailPage({
                         href={founder.linkedin_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline"
+                        className="text-[0.65rem] text-primary/80 hover:text-primary transition-colors"
                       >
                         LinkedIn
                         <ExternalLink className="ml-1 inline h-3 w-3" />
@@ -306,8 +250,8 @@ export default async function VCStartupDetailPage({
                     )}
                   </div>
                 ))}
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
         </div>
       </main>

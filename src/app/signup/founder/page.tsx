@@ -4,16 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export default function FounderSignupPage() {
   const [formData, setFormData] = useState({
@@ -65,18 +57,29 @@ export default function FounderSignupPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Create Founder Account</CardTitle>
-          <CardDescription>
-            Join Catalyst Labs and showcase your startup
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+    <div className="flex min-h-screen items-center justify-center px-4 py-12 system-grid-bg">
+      <div className="w-full max-w-md">
+        {/* Status indicator */}
+        <div className="mb-4 flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-pulse" />
+          <span className="system-label">registration module active</span>
+        </div>
+
+        {/* System module card */}
+        <div className="rounded-lg border border-border bg-card p-8 system-glow">
+          <div className="mb-8 text-center">
+            <div className="mb-4 text-2xl font-bold tracking-tight">
+              catalyst<span className="text-primary">_</span>
+            </div>
+            <h1 className="text-sm font-medium uppercase tracking-[0.1em]">Create Founder Profile</h1>
+            <p className="mt-1 text-xs text-muted-foreground tracking-wide">
+              register to showcase your startup
+            </p>
+          </div>
+
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName" className="system-label">Full Name</Label>
               <Input
                 id="fullName"
                 placeholder="Jane Smith"
@@ -86,7 +89,7 @@ export default function FounderSignupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="system-label">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -97,7 +100,7 @@ export default function FounderSignupPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="system-label">Password</Label>
               <Input
                 id="password"
                 type="password"
@@ -110,7 +113,7 @@ export default function FounderSignupPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="school">School</Label>
+                <Label htmlFor="school" className="system-label">School</Label>
                 <Input
                   id="school"
                   placeholder="MIT"
@@ -119,7 +122,7 @@ export default function FounderSignupPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="graduationYear">Graduation Year</Label>
+                <Label htmlFor="graduationYear" className="system-label">Grad Year</Label>
                 <Input
                   id="graduationYear"
                   placeholder="2026"
@@ -129,7 +132,7 @@ export default function FounderSignupPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="roleTitle">Your Role</Label>
+              <Label htmlFor="roleTitle" className="system-label">Your Role</Label>
               <Input
                 id="roleTitle"
                 placeholder="CEO, CTO, etc."
@@ -138,32 +141,33 @@ export default function FounderSignupPage() {
               />
             </div>
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-xs text-destructive">{error}</p>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Creating account..." : "Create Account"}
-            </Button>
-          </form>
-          <div className="mt-6 text-center text-sm text-muted-foreground">
-            Already have an account?{" "}
-            <Link
-              href="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline"
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-2 w-full border border-primary/30 bg-transparent px-4 py-2.5 text-xs font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5 hover:shadow-[0_0_20px_oklch(0.65_0.2_45/10%)] disabled:opacity-50"
             >
+              {loading ? "Creating profile..." : "[ Initialize Profile ]"}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-xs text-muted-foreground">
+            Already have an account?{" "}
+            <Link href="/login" className="text-primary/80 hover:text-primary transition-colors">
               Log in
             </Link>
           </div>
-          <div className="mt-2 text-center text-sm text-muted-foreground">
+          <div className="mt-2 text-center text-xs text-muted-foreground">
             Are you an investor?{" "}
-            <Link
-              href="/signup/vc"
-              className="font-medium text-primary underline-offset-4 hover:underline"
-            >
-              Sign up as an Investor
+            <Link href="/signup/vc" className="text-primary/80 hover:text-primary transition-colors">
+              Investor access
             </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+        <div className="mt-4 glow-line" />
+      </div>
     </div>
   );
 }

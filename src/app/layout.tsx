@@ -10,7 +10,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Catalyst Labs",
+  title: "Catalyst Sonar",
   description: "The platform for student startups",
 };
 

@@ -99,7 +99,20 @@ export default async function VCStartupDetailPage({
                 <div className="h-1.5 w-1.5 rounded-full bg-primary/50" />
                 <span className="system-label">startup profile</span>
               </div>
-              <h1 className="text-2xl font-bold">{startup.name}</h1>
+              <div className="flex items-center gap-3">
+                {startup.logo_url ? (
+                  <img
+                    src={startup.logo_url}
+                    alt={startup.name}
+                    className="h-10 w-10 rounded-md object-cover border border-border"
+                  />
+                ) : (
+                  <div className="flex h-10 w-10 items-center justify-center rounded-md border border-border bg-card text-sm font-bold text-muted-foreground uppercase">
+                    {startup.name.charAt(0)}
+                  </div>
+                )}
+                <h1 className="text-2xl font-bold">{startup.name}</h1>
+              </div>
               {startup.one_liner && (
                 <p className="mt-1 text-sm text-muted-foreground">
                   {startup.one_liner}

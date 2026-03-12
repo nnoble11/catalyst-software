@@ -77,7 +77,7 @@ export default async function AcceleratorsPage() {
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between border-b px-4 py-4 sm:px-8">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold">Catalyst Labs</Link>
+          <Link href="/dashboard" className="text-xl font-bold tracking-tight">catalyst <span className="text-primary">sonar</span></Link>
         </div>
         <div className="flex items-center gap-2 sm:gap-4">
           <span className="hidden text-sm text-muted-foreground sm:inline">{profile?.full_name}</span>

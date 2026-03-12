@@ -186,7 +186,65 @@ create table bookmark_list_items (
 );
 
 -- ============================================
--- 12. Indexes for performance
+-- 12. Invite Codes (platform access control)
+-- ============================================
+create type invite_code_type as enum ('single_use', 'multi_use');
+create type invite_role_restriction as enum ('founder', 'vc', 'any');
+
+create table invite_codes (
+  id uuid default uuid_generate_v4() primary key,
+  code text unique not null,
+  type invite_code_type default 'single_use',
+  max_uses integer default 1,
+  uses_count integer default 0,
+  created_by uuid references profiles on delete set null,
+  role_restriction invite_role_restriction default 'any',
+  is_active boolean default true,
+  created_at timestamptz default now() not null,
+  expires_at timestamptz
+);
+
+create table invite_code_uses (
+  id uuid default uuid_generate_v4() primary key,
+  code_id uuid references invite_codes on delete cascade not null,
+  user_id uuid references auth.users on delete cascade not null,
+  used_at timestamptz default now() not null
+);
+
+create index idx_invite_codes_code on invite_codes (code);
+create index idx_invite_code_uses_code on invite_code_uses (code_id);
+
+-- RPC: atomically increment uses_count
+create or replace function increment_invite_uses(p_code_id uuid)
+returns void as $$
+begin
+  update invite_codes
+  set uses_count = uses_count + 1
+  where id = p_code_id;
+end;
+$$ language plpgsql security definer;
+
+-- ============================================
+-- 12b. Startup Invites (multi-founder support)
+-- ============================================
+create type invite_status as enum ('pending', 'accepted', 'declined');
+
+create table startup_invites (
+  id uuid default uuid_generate_v4() primary key,
+  startup_id uuid references startups on delete cascade not null,
+  inviter_id uuid references profiles on delete cascade not null,
+  invitee_email text not null,
+  status invite_status default 'pending',
+  created_at timestamptz default now() not null,
+  expires_at timestamptz,
+  unique (startup_id, invitee_email)
+);
+
+create index idx_startup_invites_email on startup_invites (invitee_email);
+create index idx_startup_invites_startup on startup_invites (startup_id);
+
+-- ============================================
+-- 13. Indexes for performance
 -- ============================================
 create index idx_startups_stage on startups (stage);
 create index idx_startups_momentum on startups (momentum_score desc);
@@ -213,6 +271,9 @@ alter table accelerators enable row level security;
 alter table applications enable row level security;
 alter table vc_interactions enable row level security;
 alter table conversations enable row level security;
+alter table invite_codes enable row level security;
+alter table invite_code_uses enable row level security;
+alter table startup_invites enable row level security;
 alter table conversation_participants enable row level security;
 alter table messages enable row level security;
 alter table bookmark_lists enable row level security;
@@ -412,6 +473,54 @@ create policy "VCs can remove bookmark items" on bookmark_list_items
       where bookmark_lists.id = list_id
       and bookmark_lists.vc_user_id = auth.uid()
     )
+  );
+
+-- Invite codes: admins full CRUD, authenticated can SELECT for validation
+create policy "Admins can manage invite codes" on invite_codes
+  for all using (
+    exists (
+      select 1 from profiles
+      where profiles.id = auth.uid()
+      and profiles.role = 'admin'
+    )
+  );
+create policy "Authenticated can read invite codes" on invite_codes
+  for select using (auth.role() = 'authenticated');
+
+-- Invite code uses: admins can read all, system inserts via security definer
+create policy "Admins can view invite code uses" on invite_code_uses
+  for select using (
+    exists (
+      select 1 from profiles
+      where profiles.id = auth.uid()
+      and profiles.role = 'admin'
+    )
+  );
+create policy "Authenticated can insert invite code uses" on invite_code_uses
+  for insert with check (auth.role() = 'authenticated');
+
+-- Startup invites: founders can create for their startups, invitees can view/update
+create policy "Founders can invite to their startups" on startup_invites
+  for insert with check (
+    exists (
+      select 1 from startup_founders
+      where startup_founders.startup_id = startup_invites.startup_id
+      and startup_founders.founder_id = auth.uid()
+    )
+  );
+create policy "Users can view relevant invites" on startup_invites
+  for select using (
+    invitee_email = (select email from profiles where id = auth.uid())
+    or inviter_id = auth.uid()
+    or exists (
+      select 1 from startup_founders
+      where startup_founders.startup_id = startup_invites.startup_id
+      and startup_founders.founder_id = auth.uid()
+    )
+  );
+create policy "Invitees can update invite status" on startup_invites
+  for update using (
+    invitee_email = (select email from profiles where id = auth.uid())
   );
 
 -- ============================================

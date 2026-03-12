@@ -22,8 +22,9 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { INDUSTRY_OPTIONS, STAGE_LABELS, type StartupStage } from "@/lib/types";
-import { ArrowLeft, Check, Save } from "lucide-react";
+import { ArrowLeft, Check, Save, Upload, X } from "lucide-react";
 import Link from "next/link";
+import { uploadStartupLogo } from "@/lib/upload-logo";
 
 export default function EditStartupPage() {
   const params = useParams();
@@ -32,6 +33,9 @@ export default function EditStartupPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -57,6 +61,7 @@ export default function EditStartupPage() {
         .single();
 
       if (data) {
+        setCurrentLogoUrl(data.logo_url || null);
         setFormData({
           name: data.name || "",
           oneLiner: data.one_liner || "",
@@ -94,6 +99,19 @@ export default function EditStartupPage() {
     setError("");
 
     const supabase = createClient();
+
+    // Upload new logo if selected
+    let logoUrl = currentLogoUrl;
+    if (logoFile) {
+      try {
+        logoUrl = await uploadStartupLogo(supabase, logoFile, id);
+      } catch (uploadErr) {
+        setError(uploadErr instanceof Error ? uploadErr.message : "Logo upload failed");
+        setSaving(false);
+        return;
+      }
+    }
+
     const { error: updateError } = await supabase
       .from("startups")
       .update({
@@ -108,6 +126,7 @@ export default function EditStartupPage() {
         team_size: parseInt(formData.teamSize) || 1,
         funding_raised: parseFloat(formData.fundingRaised) || 0,
         industries: formData.industries,
+        logo_url: logoUrl,
       })
       .eq("id", id);
 
@@ -195,6 +214,84 @@ export default function EditStartupPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Logo</Label>
+                <div className="flex items-center gap-3">
+                  {(logoPreview || currentLogoUrl) ? (
+                    <div className="relative h-12 w-12 overflow-hidden rounded-md border border-border">
+                      <img
+                        src={logoPreview || currentLogoUrl!}
+                        alt="Logo"
+                        className="h-full w-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLogoFile(null);
+                          setLogoPreview(null);
+                          setCurrentLogoUrl(null);
+                        }}
+                        className="absolute -right-1 -top-1 rounded-full bg-background border border-border p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-md border border-dashed border-border hover:border-primary/30 transition-colors">
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setLogoFile(file);
+                            setLogoPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                  <div>
+                    <p className="text-xs text-muted-foreground">PNG, JPEG, WebP, or SVG. Max 2MB.</p>
+                    {!logoPreview && !currentLogoUrl && (
+                      <label className="cursor-pointer text-xs text-primary/80 hover:text-primary transition-colors">
+                        Upload logo
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLogoFile(file);
+                              setLogoPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                    {(logoPreview || currentLogoUrl) && (
+                      <label className="cursor-pointer text-xs text-primary/80 hover:text-primary transition-colors">
+                        Replace
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setLogoFile(file);
+                              setLogoPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

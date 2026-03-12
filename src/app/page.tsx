@@ -19,7 +19,7 @@ export default function LandingPage() {
       <div className="relative z-10 flex flex-col items-center gap-12 px-4 text-center">
         {/* Logo */}
         <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          catalyst sonar<span className="text-primary">_</span>
+          catalyst <span className="text-primary">sonar</span>
         </h1>
 
         <p className="max-w-md text-xs tracking-[0.2em] text-muted-foreground uppercase">

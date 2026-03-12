@@ -47,7 +47,7 @@ export default async function ManageAcceleratorsPage() {
     <div className="min-h-screen bg-background">
       <header className="flex items-center justify-between border-b px-8 py-4">
         <div className="flex items-center gap-6">
-          <Link href="/dashboard" className="text-xl font-bold">Catalyst Labs</Link>
+          <Link href="/dashboard" className="text-xl font-bold tracking-tight">catalyst <span className="text-primary">sonar</span></Link>
           <nav className="flex gap-4 text-sm">
             <Link href="/deals" className="text-muted-foreground hover:text-foreground">Deal Table</Link>
             <Link href="/lists" className="text-muted-foreground hover:text-foreground">Lists</Link>

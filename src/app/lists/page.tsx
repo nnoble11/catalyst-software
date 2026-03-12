@@ -61,7 +61,7 @@ export default async function ListsPage() {
       <header className="flex items-center justify-between border-b px-8 py-4">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-xl font-bold">
-            Catalyst Labs
+            catalyst <span className="text-primary">sonar</span>
           </Link>
           <nav className="flex gap-4 text-sm">
             <Link

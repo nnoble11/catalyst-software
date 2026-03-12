@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function VCSignupPage() {
+  const [inviteCode, setInviteCode] = useState("");
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -27,6 +28,22 @@ export default function VCSignupPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // Validate invite code first
+    const validateRes = await fetch("/api/validate-invite-code", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: inviteCode, role: "vc" }),
+    });
+    const validateData = await validateRes.json();
+
+    if (!validateData.valid) {
+      setError(validateData.error || "Invalid invite code");
+      setLoading(false);
+      return;
+    }
+
+    const codeId = validateData.codeId;
 
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({
@@ -48,6 +65,16 @@ export default function VCSignupPage() {
       return;
     }
 
+    // Redeem the invite code
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user) {
+      await fetch("/api/redeem-invite-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeId, userId: authData.user.id }),
+      });
+    }
+
     router.push("/dashboard");
     router.refresh();
   }
@@ -65,7 +92,7 @@ export default function VCSignupPage() {
         <div className="rounded-lg border border-border bg-card p-8 system-glow">
           <div className="mb-8 text-center">
             <div className="mb-4 text-2xl font-bold tracking-tight">
-              catalyst<span className="text-primary">_</span>
+              catalyst <span className="text-primary">sonar</span>
             </div>
             <h1 className="text-sm font-medium uppercase tracking-[0.1em]">Create Investor Profile</h1>
             <p className="mt-1 text-xs text-muted-foreground tracking-wide">
@@ -74,6 +101,17 @@ export default function VCSignupPage() {
           </div>
 
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="inviteCode" className="system-label">Invite Code</Label>
+              <Input
+                id="inviteCode"
+                placeholder="XXXX-XXXX"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                required
+                className="font-mono tracking-widest"
+              />
+            </div>
             <div className="space-y-2">
               <Label htmlFor="fullName" className="system-label">Full Name</Label>
               <Input

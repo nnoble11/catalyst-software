@@ -24,6 +24,7 @@ import {
   type Startup,
   type StartupStage,
 } from "@/lib/types";
+import Image from "next/image";
 import {
   ArrowDown,
   ArrowUp,
@@ -208,6 +209,7 @@ export function DealTable({ startups }: DealTableProps) {
         <Table>
           <TableHeader>
             <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="w-[40px] text-[0.6rem] uppercase tracking-[0.12em]" />
               <TableHead
                 className="cursor-pointer select-none text-[0.6rem] uppercase tracking-[0.12em]"
                 onClick={() => toggleSort("name")}
@@ -256,7 +258,7 @@ export function DealTable({ startups }: DealTableProps) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="py-12 text-center">
+                <TableCell colSpan={8} className="py-12 text-center">
                   <span className="text-[0.65rem] uppercase tracking-[0.15em] text-muted-foreground">
                     No results // adjust parameters
                   </span>
@@ -265,6 +267,21 @@ export function DealTable({ startups }: DealTableProps) {
             ) : (
               filtered.map((startup) => (
                 <TableRow key={startup.id} className="group border-border transition-all hover:bg-primary/[0.02] hover:shadow-[inset_0_0_30px_oklch(0.65_0.2_45/3%)]">
+                  <TableCell className="w-[40px] pr-0">
+                    {startup.logo_url ? (
+                      <Image
+                        src={startup.logo_url}
+                        alt={startup.name}
+                        width={28}
+                        height={28}
+                        className="rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-7 w-7 items-center justify-center rounded-md border border-border bg-card text-[0.6rem] font-bold text-muted-foreground uppercase">
+                        {startup.name.charAt(0)}
+                      </div>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Link
                       href={`/deals/${startup.id}`}

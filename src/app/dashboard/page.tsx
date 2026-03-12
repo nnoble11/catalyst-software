@@ -7,6 +7,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { MobileNav } from "@/components/mobile-nav";
 import { STAGE_LABELS, type StartupStage } from "@/lib/types";
 import { Logo } from "@/components/logo";
+import { InviteNotification } from "@/components/invite-notification";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -26,6 +27,8 @@ export default async function DashboardPage() {
     .single();
 
   let startups: { id: string; name: string; one_liner: string | null; stage: string; industries: string[] }[] = [];
+  let pendingInvites: { id: string; startup_id: string; startup: { name: string } | null; inviter: { full_name: string } | null; created_at: string }[] = [];
+
   if (profile?.role === "founder") {
     const { data: founderLinks } = await supabase
       .from("startup_founders")
@@ -40,6 +43,22 @@ export default async function DashboardPage() {
         .in("id", startupIds);
       startups = data || [];
     }
+
+    // Fetch pending invites addressed to this user's email
+    const { data: invites } = await supabase
+      .from("startup_invites")
+      .select("id, startup_id, created_at, startup:startups(name), inviter:profiles!startup_invites_inviter_id_fkey(full_name)")
+      .eq("invitee_email", profile.email)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+
+    pendingInvites = (invites || []).map((inv: Record<string, unknown>) => ({
+      id: inv.id as string,
+      startup_id: inv.startup_id as string,
+      startup: inv.startup as { name: string } | null,
+      inviter: inv.inviter as { full_name: string } | null,
+      created_at: inv.created_at as string,
+    }));
   }
 
   return (
@@ -81,6 +100,18 @@ export default async function DashboardPage() {
           <span className="system-label">control panel</span>
         </div>
         <h1 className="mb-8 text-2xl font-bold uppercase tracking-[0.05em]">Dashboard</h1>
+
+        {/* Pending team invites */}
+        {pendingInvites.length > 0 && (
+          <div className="mb-8 space-y-3">
+            <h2 className="system-label text-sm">Team Invites</h2>
+            <div className="grid gap-3 md:grid-cols-2">
+              {pendingInvites.map((invite) => (
+                <InviteNotification key={invite.id} invite={invite} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {profile?.role === "founder" && (
           <div className="space-y-6">
@@ -155,7 +186,7 @@ export default async function DashboardPage() {
         )}
 
         {profile?.role === "admin" && (
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 md:grid-cols-3">
             <div className="rounded-lg border border-border bg-card p-8 system-glow-hover transition-all">
               <h2 className="system-label text-sm mb-3">Analytics Module</h2>
               <p className="text-xs text-muted-foreground mb-6">
@@ -175,6 +206,17 @@ export default async function DashboardPage() {
               <Link href="/admin/users">
                 <button className="border border-primary/30 bg-transparent px-4 py-2 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
                   Manage Users →
+                </button>
+              </Link>
+            </div>
+            <div className="rounded-lg border border-border bg-card p-8 system-glow-hover transition-all">
+              <h2 className="system-label text-sm mb-3">Invite Codes</h2>
+              <p className="text-xs text-muted-foreground mb-6">
+                Generate and manage access codes.
+              </p>
+              <Link href="/admin/invite-codes">
+                <button className="border border-primary/30 bg-transparent px-4 py-2 text-[0.65rem] font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5">
+                  Manage Codes →
                 </button>
               </Link>
             </div>

@@ -43,9 +43,11 @@ export async function updateSession(request: NextRequest) {
 
   // Define public routes that don't require auth
   const publicRoutes = ["/", "/login", "/signup/founder", "/signup/vc"];
-  const isPublicRoute = publicRoutes.some(
-    (route) => request.nextUrl.pathname === route
-  );
+  const isPublicRoute =
+    publicRoutes.some((route) => request.nextUrl.pathname === route) ||
+    request.nextUrl.pathname.startsWith("/api/validate-invite-code") ||
+    request.nextUrl.pathname.startsWith("/api/redeem-invite-code") ||
+    request.nextUrl.pathname.startsWith("/auth/");
 
   // If not authenticated and trying to access a protected route, redirect to login
   if (!user && !isPublicRoute) {

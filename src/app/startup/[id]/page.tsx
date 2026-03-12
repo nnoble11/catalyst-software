@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import { CreateUpdateForm } from "@/components/create-update-form";
+import { InviteCofounderForm } from "@/components/invite-cofounder-form";
 
 export default async function StartupProfilePage({
   params,
@@ -74,6 +75,16 @@ export default async function StartupProfilePage({
   // Check if current user is a founder of this startup
   const isFounder = founderIds.includes(user?.id || "");
 
+  // Fetch pending invites (visible to founders)
+  const { data: pendingInvites } = isFounder
+    ? await supabase
+        .from("startup_invites")
+        .select("id, invitee_email, status, created_at")
+        .eq("startup_id", id)
+        .eq("status", "pending")
+        .order("created_at", { ascending: false })
+    : { data: null };
+
   // Fetch updates
   const { data: updates } = await supabase
     .from("updates")
@@ -93,7 +104,7 @@ export default async function StartupProfilePage({
               Back
             </Button>
           </Link>
-          <div className="text-xl font-bold">Catalyst Labs</div>
+          <div className="text-xl font-bold tracking-tight">catalyst <span className="text-primary">sonar</span></div>
         </div>
       </header>
 
@@ -105,7 +116,20 @@ export default async function StartupProfilePage({
             <div>
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold">{startup.name}</h1>
+                  <div className="flex items-center gap-3">
+                    {startup.logo_url ? (
+                      <img
+                        src={startup.logo_url}
+                        alt={startup.name}
+                        className="h-12 w-12 rounded-md object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card text-lg font-bold text-muted-foreground uppercase">
+                        {startup.name.charAt(0)}
+                      </div>
+                    )}
+                    <h1 className="text-3xl font-bold">{startup.name}</h1>
+                  </div>
                   {startup.one_liner && (
                     <p className="mt-1 text-lg text-muted-foreground">
                       {startup.one_liner}
@@ -240,7 +264,7 @@ export default async function StartupProfilePage({
               <CardHeader>
                 <CardTitle className="text-base">Team</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-3">
                 {founders.map((founder) => (
                   <div key={founder.id} className="text-sm">
                     <p className="font-medium">{founder.full_name}</p>
@@ -251,6 +275,27 @@ export default async function StartupProfilePage({
                     )}
                   </div>
                 ))}
+
+                {/* Pending invites */}
+                {pendingInvites && pendingInvites.length > 0 && (
+                  <div className="border-t border-border pt-3 mt-3">
+                    <p className="system-label text-[0.6rem] mb-2">Pending Invites</p>
+                    {pendingInvites.map((invite) => (
+                      <div key={invite.id} className="text-xs text-muted-foreground flex items-center gap-2 mb-1">
+                        <div className="h-1 w-1 rounded-full bg-primary/40" />
+                        {invite.invitee_email}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Invite form (founders only) */}
+                {isFounder && (
+                  <div className="border-t border-border pt-3 mt-3">
+                    <p className="system-label text-[0.6rem] mb-2">Invite Co-Founder</p>
+                    <InviteCofounderForm startupId={id} />
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>

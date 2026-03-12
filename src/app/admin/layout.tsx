@@ -29,7 +29,7 @@ export default async function AdminLayout({
       <header className="flex items-center justify-between border-b border-border px-8 py-4" style={{ boxShadow: "0 1px 12px oklch(0.65 0.2 45 / 3%)" }}>
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-xl font-bold tracking-tight">
-            catalyst<span className="text-primary">_</span>
+            catalyst <span className="text-primary">sonar</span>
           </Link>
           <nav className="flex items-center gap-4">
             <Link
@@ -43,6 +43,12 @@ export default async function AdminLayout({
               className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground hover:text-primary transition-colors"
             >
               Users
+            </Link>
+            <Link
+              href="/admin/invite-codes"
+              className="text-[0.65rem] uppercase tracking-[0.1em] text-muted-foreground hover:text-primary transition-colors"
+            >
+              Codes
             </Link>
           </nav>
         </div>

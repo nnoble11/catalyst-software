@@ -106,3 +106,43 @@ export const UPDATE_TYPE_LABELS: Record<UpdateType, string> = {
   announcement: "Announcement",
   general: "General",
 };
+
+// Invite codes
+export type InviteCodeType = "single_use" | "multi_use";
+export type InviteRoleRestriction = "founder" | "vc" | "any";
+
+export interface InviteCode {
+  id: string;
+  code: string;
+  type: InviteCodeType;
+  max_uses: number;
+  uses_count: number;
+  created_by: string;
+  role_restriction: InviteRoleRestriction;
+  is_active: boolean;
+  created_at: string;
+  expires_at: string | null;
+}
+
+export interface InviteCodeUse {
+  id: string;
+  code_id: string;
+  user_id: string;
+  used_at: string;
+}
+
+// Multi-founder invites
+export type InviteStatus = "pending" | "accepted" | "declined";
+
+export interface StartupInvite {
+  id: string;
+  startup_id: string;
+  inviter_id: string;
+  invitee_email: string;
+  status: InviteStatus;
+  created_at: string;
+  expires_at: string | null;
+  // Joined fields
+  startup?: { name: string };
+  inviter?: { full_name: string };
+}

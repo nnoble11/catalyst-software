@@ -10,7 +10,7 @@ export function Logo({ size = "default" }: { size?: "default" | "large" }) {
     <Link href="/dashboard" className="group flex items-center gap-2">
       <Image
         src="/logo.svg"
-        alt="Catalyst Labs"
+        alt="Catalyst Sonar"
         width={size === "large" ? 32 : 24}
         height={size === "large" ? 32 : 24}
         className="hidden"
@@ -22,7 +22,7 @@ export function Logo({ size = "default" }: { size?: "default" | "large" }) {
         }}
       />
       <span className={`${textClass} font-bold tracking-tight`}>
-        catalyst<span className="text-primary transition-all group-hover:drop-shadow-[0_0_8px_oklch(0.65_0.2_45/40%)]">_</span>
+        catalyst <span className="text-primary transition-all group-hover:drop-shadow-[0_0_8px_oklch(0.65_0.2_45/40%)]">sonar</span>
       </span>
     </Link>
   );

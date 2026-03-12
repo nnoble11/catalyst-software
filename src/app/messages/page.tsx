@@ -109,7 +109,7 @@ export default async function MessagesPage() {
       <header className="flex items-center justify-between border-b px-4 py-4 sm:px-8">
         <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/dashboard" className="text-xl font-bold">
-            Catalyst Labs
+            catalyst <span className="text-primary">sonar</span>
           </Link>
           {profile?.role === "vc" && (
             <nav className="hidden gap-4 text-sm sm:flex">

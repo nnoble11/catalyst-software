@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { INDUSTRY_OPTIONS, STAGE_LABELS, type StartupStage } from "@/lib/types";
-import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X, Upload } from "lucide-react";
+import { uploadStartupLogo } from "@/lib/upload-logo";
 
 const STEPS = ["Basics", "Details", "Industries", "Review"];
 
@@ -33,6 +34,8 @@ export default function CreateStartupPage() {
   const [error, setError] = useState("");
   const router = useRouter();
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     oneLiner: "",
@@ -60,9 +63,26 @@ export default function CreateStartupPage() {
     }));
   }
 
+  const [nameWarning, setNameWarning] = useState("");
+
   function canProceed(): boolean {
     if (step === 0) return formData.name.trim().length > 0;
     return true;
+  }
+
+  async function checkDuplicateName() {
+    if (!formData.name.trim()) return;
+    const supabase = createClient();
+    const { data } = await supabase
+      .from("startups")
+      .select("id")
+      .ilike("name", formData.name.trim())
+      .limit(1);
+    if (data && data.length > 0) {
+      setNameWarning("A startup with this name already exists. You may want to join it instead of creating a new one.");
+    } else {
+      setNameWarning("");
+    }
   }
 
   async function handleSubmit() {
@@ -103,6 +123,20 @@ export default function CreateStartupPage() {
       setError(startupError.message);
       setLoading(false);
       return;
+    }
+
+    // Upload logo if provided
+    if (logoFile) {
+      try {
+        const logoUrl = await uploadStartupLogo(supabase, logoFile, startup.id);
+        await supabase
+          .from("startups")
+          .update({ logo_url: logoUrl })
+          .eq("id", startup.id);
+      } catch (uploadErr) {
+        console.error("Logo upload failed:", uploadErr);
+        // Non-blocking — startup is still created
+      }
     }
 
     // Link founder to startup
@@ -158,9 +192,13 @@ export default function CreateStartupPage() {
                   id="name"
                   placeholder="Acme Labs"
                   value={formData.name}
-                  onChange={(e) => updateField("name", e.target.value)}
+                  onChange={(e) => { updateField("name", e.target.value); setNameWarning(""); }}
+                  onBlur={checkDuplicateName}
                   required
                 />
+                {nameWarning && (
+                  <p className="text-xs text-yellow-500">{nameWarning}</p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="oneLiner">One-Liner</Label>
@@ -202,6 +240,40 @@ export default function CreateStartupPage() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Logo (optional)</Label>
+                <div className="flex items-center gap-3">
+                  {logoPreview ? (
+                    <div className="relative h-12 w-12 overflow-hidden rounded-md border border-border">
+                      <img src={logoPreview} alt="Logo preview" className="h-full w-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                        className="absolute -right-1 -top-1 rounded-full bg-background border border-border p-0.5"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-md border border-dashed border-border hover:border-primary/30 transition-colors">
+                      <Upload className="h-4 w-4 text-muted-foreground" />
+                      <input
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setLogoFile(file);
+                            setLogoPreview(URL.createObjectURL(file));
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                  <p className="text-xs text-muted-foreground">PNG, JPEG, WebP, or SVG. Max 2MB.</p>
+                </div>
               </div>
             </div>
           )}

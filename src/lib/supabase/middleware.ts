@@ -42,7 +42,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Define public routes that don't require auth
-  const publicRoutes = ["/", "/login", "/signup/founder", "/signup/vc"];
+  const publicRoutes = ["/", "/login", "/signup/founder", "/signup/vc", "/invite/founder", "/invite/vc"];
   const isPublicRoute =
     publicRoutes.some((route) => request.nextUrl.pathname === route) ||
     request.nextUrl.pathname.startsWith("/api/validate-invite-code") ||
@@ -86,7 +86,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Redirect authenticated users away from auth pages
-    if (["/login", "/signup/founder", "/signup/vc"].includes(pathname)) {
+    if (["/login", "/signup/founder", "/signup/vc", "/invite/founder", "/invite/vc"].includes(pathname) || pathname === "/") {
       const url = request.nextUrl.clone();
       url.pathname = "/dashboard";
       return NextResponse.redirect(url);

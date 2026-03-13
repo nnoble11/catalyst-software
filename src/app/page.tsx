@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { RadarAnimation } from "@/components/radar-animation";
+import { GalaxyBackground } from "@/components/galaxy-background";
 import { SystemTimestamp } from "@/components/system-timestamp";
 
 export default function LandingPage() {
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-background system-grid-bg">
-      <RadarAnimation />
+      <GalaxyBackground />
 
       {/* System readouts */}
       <div className="absolute top-6 left-6 z-10 system-text select-none">
@@ -22,18 +22,14 @@ export default function LandingPage() {
           catalyst <span className="text-primary">sonar</span>
         </h1>
 
-        <p className="max-w-md text-xs tracking-[0.2em] text-muted-foreground uppercase">
-          the platform for student startups
-        </p>
-
         {/* CTA buttons — system command style */}
         <div className="flex flex-col gap-4 sm:flex-row">
-          <Link href="/signup/founder">
+          <Link href="/invite/founder">
             <button className="w-52 border border-primary/30 bg-transparent px-6 py-3 text-xs font-medium uppercase tracking-[0.15em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5 hover:shadow-[0_0_20px_oklch(0.65_0.2_45/10%)]">
               [Founder Access]
             </button>
           </Link>
-          <Link href="/signup/vc">
+          <Link href="/invite/vc">
             <button className="w-52 border border-[oklch(1_0_0/10%)] bg-transparent px-6 py-3 text-xs font-medium uppercase tracking-[0.15em] text-foreground/70 transition-all hover:border-[oklch(1_0_0/20%)] hover:text-foreground hover:shadow-[0_0_20px_oklch(1_0_0/5%)]">
               [Investor Access]
             </button>

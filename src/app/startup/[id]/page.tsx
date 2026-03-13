@@ -121,7 +121,7 @@ export default async function StartupProfilePage({
                       <img
                         src={startup.logo_url}
                         alt={startup.name}
-                        className="h-12 w-12 rounded-md object-cover border border-border"
+                        className="h-12 w-12 rounded-md object-contain"
                       />
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card text-lg font-bold text-muted-foreground uppercase">

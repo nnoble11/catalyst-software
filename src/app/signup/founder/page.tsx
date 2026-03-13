@@ -1,14 +1,26 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function FounderSignupPage() {
-  const [inviteCode, setInviteCode] = useState("");
+  return (
+    <Suspense>
+      <FounderSignupInner />
+    </Suspense>
+  );
+}
+
+function FounderSignupInner() {
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("code") || "";
+  const codeId = searchParams.get("codeId") || "";
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -19,7 +31,13 @@ export default function FounderSignupPage() {
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
+
+  // Redirect back if no code provided
+  useEffect(() => {
+    if (!inviteCode || !codeId) {
+      router.replace("/invite/founder");
+    }
+  }, [inviteCode, codeId, router]);
 
   function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -29,22 +47,6 @@ export default function FounderSignupPage() {
     e.preventDefault();
     setLoading(true);
     setError("");
-
-    // Validate invite code first
-    const validateRes = await fetch("/api/validate-invite-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: inviteCode, role: "founder" }),
-    });
-    const validateData = await validateRes.json();
-
-    if (!validateData.valid) {
-      setError(validateData.error || "Invalid invite code");
-      setLoading(false);
-      return;
-    }
-
-    const codeId = validateData.codeId;
 
     const supabase = createClient();
     const { error } = await supabase.auth.signUp({
@@ -83,6 +85,8 @@ export default function FounderSignupPage() {
     router.refresh();
   }
 
+  if (!inviteCode || !codeId) return null;
+
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12 system-grid-bg">
       <div className="w-full max-w-md">
@@ -105,17 +109,6 @@ export default function FounderSignupPage() {
           </div>
 
           <form onSubmit={handleSignup} className="flex flex-col gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="inviteCode" className="system-label">Invite Code</Label>
-              <Input
-                id="inviteCode"
-                placeholder="XXXX-XXXX"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-                required
-                className="font-mono tracking-widest"
-              />
-            </div>
             <div className="space-y-2">
               <Label htmlFor="fullName" className="system-label">Full Name</Label>
               <Input
@@ -198,7 +191,7 @@ export default function FounderSignupPage() {
           </div>
           <div className="mt-2 text-center text-xs text-muted-foreground">
             Are you an investor?{" "}
-            <Link href="/signup/vc" className="text-primary/80 hover:text-primary transition-colors">
+            <Link href="/invite/vc" className="text-primary/80 hover:text-primary transition-colors">
               Investor access
             </Link>
           </div>

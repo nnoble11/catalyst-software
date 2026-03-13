@@ -95,9 +95,6 @@ function VCSignupInner() {
         {/* System module card */}
         <div className="rounded-lg border border-border bg-card p-8 system-glow">
           <div className="mb-8 text-center">
-            <div className="mb-4 text-2xl font-bold tracking-tight">
-              catalyst <span className="text-primary">sonar</span>
-            </div>
             <h1 className="text-sm font-medium uppercase tracking-[0.1em]">Create Investor Profile</h1>
             <p className="mt-1 text-xs text-muted-foreground tracking-wide">
               register to discover student startups

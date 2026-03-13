@@ -118,13 +118,15 @@ export default async function StartupProfilePage({
                 <div>
                   <div className="flex items-center gap-3">
                     {startup.logo_url ? (
-                      <img
-                        src={startup.logo_url}
-                        alt={startup.name}
-                        className="h-12 w-12 rounded-md object-contain"
-                      />
+                      <div className="h-12 w-12 flex-shrink-0 rounded-md border border-border bg-card p-1">
+                        <img
+                          src={startup.logo_url}
+                          alt={startup.name}
+                          className="h-full w-full rounded object-contain"
+                        />
+                      </div>
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-md border border-border bg-card text-lg font-bold text-muted-foreground uppercase">
+                      <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-md border border-border bg-card text-lg font-bold text-muted-foreground uppercase">
                         {startup.name.charAt(0)}
                       </div>
                     )}

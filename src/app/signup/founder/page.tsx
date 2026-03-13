@@ -6,6 +6,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { INDUSTRY_OPTIONS, STAGE_LABELS, type StartupStage } from "@/lib/types";
+import { Check } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function FounderSignupPage() {
   return (
@@ -21,6 +31,8 @@ function FounderSignupInner() {
   const codeId = searchParams.get("codeId") || "";
   const router = useRouter();
 
+  const [phase, setPhase] = useState<"account" | "startup">("account");
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -29,8 +41,17 @@ function FounderSignupInner() {
     graduationYear: "",
     roleTitle: "",
   });
+
+  const [startupData, setStartupData] = useState({
+    name: "",
+    oneLiner: "",
+    stage: "idea" as StartupStage,
+    industries: [] as string[],
+  });
+
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Redirect back if no code provided
   useEffect(() => {
@@ -41,6 +62,19 @@ function FounderSignupInner() {
 
   function updateField(field: string, value: string) {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function updateStartupField(field: string, value: string | string[]) {
+    setStartupData((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function toggleIndustry(industry: string) {
+    setStartupData((prev) => ({
+      ...prev,
+      industries: prev.industries.includes(industry)
+        ? prev.industries.filter((i) => i !== industry)
+        : [...prev.industries, industry],
+    }));
   }
 
   async function handleSignup(e: React.FormEvent) {
@@ -74,6 +108,7 @@ function FounderSignupInner() {
     // Redeem the invite code
     const { data: authData } = await supabase.auth.getUser();
     if (authData?.user) {
+      setUserId(authData.user.id);
       await fetch("/api/redeem-invite-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -81,12 +116,166 @@ function FounderSignupInner() {
       });
     }
 
+    setLoading(false);
+    setPhase("startup");
+  }
+
+  async function handleStartupSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const supabase = createClient();
+    const currentUserId = userId || (await supabase.auth.getUser()).data.user?.id;
+
+    if (!currentUserId) {
+      setError("Session lost. Please try logging in.");
+      setLoading(false);
+      return;
+    }
+
+    const { data: startup, error: startupError } = await supabase
+      .from("startups")
+      .insert({
+        name: startupData.name,
+        one_liner: startupData.oneLiner || null,
+        stage: startupData.stage,
+        industries: startupData.industries,
+      })
+      .select()
+      .single();
+
+    if (startupError) {
+      setError(startupError.message);
+      setLoading(false);
+      return;
+    }
+
+    // Link founder to startup
+    await supabase.from("startup_founders").insert({
+      startup_id: startup.id,
+      founder_id: currentUserId,
+      role: "primary",
+    });
+
     router.push("/dashboard");
     router.refresh();
   }
 
   if (!inviteCode || !codeId) return null;
 
+  // ──── PHASE 2: Basic Startup Info ────
+  if (phase === "startup") {
+    return (
+      <div className="flex min-h-screen items-center justify-center px-4 py-12 system-grid-bg">
+        <div className="w-full max-w-md">
+          <div className="mb-4 flex items-center gap-2">
+            <div className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-pulse" />
+            <span className="system-label">startup registration</span>
+          </div>
+
+          <div className="rounded-lg border border-border bg-card p-8 system-glow">
+            <div className="mb-6 text-center">
+              <h1 className="text-sm font-medium uppercase tracking-[0.1em]">
+                Add Your Startup
+              </h1>
+              <p className="mt-1 text-xs text-muted-foreground tracking-wide">
+                you can add more details later
+              </p>
+            </div>
+
+            <form onSubmit={handleStartupSubmit} className="flex flex-col gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="startupName" className="system-label">
+                  Startup Name *
+                </Label>
+                <Input
+                  id="startupName"
+                  placeholder="Acme Labs"
+                  value={startupData.name}
+                  onChange={(e) => updateStartupField("name", e.target.value)}
+                  required
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="oneLiner" className="system-label">
+                  One-Liner
+                </Label>
+                <Input
+                  id="oneLiner"
+                  placeholder="Building the future of X for Y"
+                  maxLength={140}
+                  value={startupData.oneLiner}
+                  onChange={(e) => updateStartupField("oneLiner", e.target.value)}
+                />
+                <p className="text-[0.6rem] text-muted-foreground">
+                  {startupData.oneLiner.length}/140
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stage" className="system-label">
+                  Stage
+                </Label>
+                <Select
+                  value={startupData.stage}
+                  onValueChange={(v) => v && updateStartupField("stage", v)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(STAGE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="system-label">Industries</Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {INDUSTRY_OPTIONS.map((industry) => {
+                    const selected = startupData.industries.includes(industry);
+                    return (
+                      <Badge
+                        key={industry}
+                        variant={selected ? "default" : "outline"}
+                        className="cursor-pointer select-none text-[0.6rem]"
+                        onClick={() => toggleIndustry(industry)}
+                      >
+                        {selected && <Check className="mr-0.5 h-2.5 w-2.5" />}
+                        {industry}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {error && <p className="text-xs text-destructive">{error}</p>}
+
+              <button
+                type="submit"
+                disabled={loading || !startupData.name.trim()}
+                className="mt-2 w-full border border-primary/30 bg-transparent px-4 py-2.5 text-xs font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5 hover:shadow-[0_0_20px_oklch(0.65_0.2_45/10%)] disabled:opacity-50"
+              >
+                {loading ? "Creating startup..." : "[ Create Startup ]"}
+              </button>
+
+            </form>
+          </div>
+
+          <div className="mt-4 glow-line" />
+        </div>
+      </div>
+    );
+  }
+
+  // ──── PHASE 1: Account Creation ────
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-12 system-grid-bg">
       <div className="w-full max-w-md">
@@ -99,9 +288,6 @@ function FounderSignupInner() {
         {/* System module card */}
         <div className="rounded-lg border border-border bg-card p-8 system-glow">
           <div className="mb-8 text-center">
-            <div className="mb-4 text-2xl font-bold tracking-tight">
-              catalyst <span className="text-primary">sonar</span>
-            </div>
             <h1 className="text-sm font-medium uppercase tracking-[0.1em]">Create Founder Profile</h1>
             <p className="mt-1 text-xs text-muted-foreground tracking-wide">
               register to showcase your startup
@@ -179,7 +365,7 @@ function FounderSignupInner() {
               disabled={loading}
               className="mt-2 w-full border border-primary/30 bg-transparent px-4 py-2.5 text-xs font-medium uppercase tracking-[0.1em] text-primary transition-all hover:border-primary/60 hover:bg-primary/5 hover:shadow-[0_0_20px_oklch(0.65_0.2_45/10%)] disabled:opacity-50"
             >
-              {loading ? "Creating profile..." : "[ Initialize Profile ]"}
+              {loading ? "Creating profile..." : "[ Continue ]"}
             </button>
           </form>
 

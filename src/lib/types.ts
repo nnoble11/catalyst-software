@@ -45,6 +45,9 @@ export interface Startup {
   pitch_deck_url: string | null;
   location: string | null;
   momentum_score: number;
+  monthly_revenue: number;
+  user_count: number;
+  support_needed: string[];
   created_at: string;
   updated_at: string;
 }
@@ -98,6 +101,14 @@ export const INDUSTRY_OPTIONS = [
   "Social",
   "Space",
   "Other",
+];
+
+export const SUPPORT_OPTIONS = [
+  "Mentorship",
+  "Introductions",
+  "Technical",
+  "Hiring",
+  "Go-to-Market",
 ];
 
 export const UPDATE_TYPE_LABELS: Record<UpdateType, string> = {

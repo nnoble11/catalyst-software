@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { INDUSTRY_OPTIONS, STAGE_LABELS, type StartupStage } from "@/lib/types";
+import { INDUSTRY_OPTIONS, SUPPORT_OPTIONS, STAGE_LABELS, type StartupStage } from "@/lib/types";
 import { Check } from "lucide-react";
 import {
   Select,
@@ -40,6 +40,7 @@ function FounderSignupInner() {
     school: "",
     graduationYear: "",
     roleTitle: "",
+    linkedinUrl: "",
   });
 
   const [startupData, setStartupData] = useState({
@@ -47,6 +48,9 @@ function FounderSignupInner() {
     oneLiner: "",
     stage: "idea" as StartupStage,
     industries: [] as string[],
+    monthlyRevenue: "",
+    userCount: "",
+    supportNeeded: [] as string[],
   });
 
   const [error, setError] = useState("");
@@ -77,6 +81,15 @@ function FounderSignupInner() {
     }));
   }
 
+  function toggleSupport(option: string) {
+    setStartupData((prev) => ({
+      ...prev,
+      supportNeeded: prev.supportNeeded.includes(option)
+        ? prev.supportNeeded.filter((s) => s !== option)
+        : [...prev.supportNeeded, option],
+    }));
+  }
+
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -95,6 +108,7 @@ function FounderSignupInner() {
             ? parseInt(formData.graduationYear)
             : null,
           role_title: formData.roleTitle,
+          linkedin_url: formData.linkedinUrl || null,
         },
       },
     });
@@ -141,6 +155,13 @@ function FounderSignupInner() {
         one_liner: startupData.oneLiner || null,
         stage: startupData.stage,
         industries: startupData.industries,
+        monthly_revenue: startupData.monthlyRevenue
+          ? parseFloat(startupData.monthlyRevenue)
+          : 0,
+        user_count: startupData.userCount
+          ? parseInt(startupData.userCount)
+          : 0,
+        support_needed: startupData.supportNeeded,
       })
       .select()
       .single();
@@ -256,6 +277,62 @@ function FounderSignupInner() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label className="system-label">
+                  Do you have any revenue or users yet?
+                </Label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <Label htmlFor="monthlyRevenue" className="text-[0.6rem] text-muted-foreground">
+                      Monthly Revenue ($)
+                    </Label>
+                    <Input
+                      id="monthlyRevenue"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={startupData.monthlyRevenue}
+                      onChange={(e) => updateStartupField("monthlyRevenue", e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="userCount" className="text-[0.6rem] text-muted-foreground">
+                      Number of Users
+                    </Label>
+                    <Input
+                      id="userCount"
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={startupData.userCount}
+                      onChange={(e) => updateStartupField("userCount", e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="system-label">
+                  What kind of support are you looking for beyond capital?
+                </Label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SUPPORT_OPTIONS.map((option) => {
+                    const selected = startupData.supportNeeded.includes(option);
+                    return (
+                      <Badge
+                        key={option}
+                        variant={selected ? "default" : "outline"}
+                        className="cursor-pointer select-none text-[0.6rem]"
+                        onClick={() => toggleSupport(option)}
+                      >
+                        {selected && <Check className="mr-0.5 h-2.5 w-2.5" />}
+                        {option}
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+
               {error && <p className="text-xs text-destructive">{error}</p>}
 
               <button
@@ -355,6 +432,15 @@ function FounderSignupInner() {
                 placeholder="CEO, CTO, etc."
                 value={formData.roleTitle}
                 onChange={(e) => updateField("roleTitle", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedinUrl" className="system-label">LinkedIn URL</Label>
+              <Input
+                id="linkedinUrl"
+                placeholder="https://linkedin.com/in/janesmith"
+                value={formData.linkedinUrl}
+                onChange={(e) => updateField("linkedinUrl", e.target.value)}
               />
             </div>
             {error && (

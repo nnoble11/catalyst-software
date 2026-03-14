@@ -27,6 +27,7 @@ function VCSignupInner() {
     password: "",
     firmName: "",
     title: "",
+    linkedinUrl: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,6 +58,7 @@ function VCSignupInner() {
           full_name: formData.fullName,
           firm_name: formData.firmName,
           title: formData.title,
+          linkedin_url: formData.linkedinUrl || null,
         },
       },
     });
@@ -152,6 +154,15 @@ function VCSignupInner() {
                 placeholder="Partner, Analyst, etc."
                 value={formData.title}
                 onChange={(e) => updateField("title", e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="linkedinUrl" className="system-label">LinkedIn URL</Label>
+              <Input
+                id="linkedinUrl"
+                placeholder="https://linkedin.com/in/johndoe"
+                value={formData.linkedinUrl}
+                onChange={(e) => updateField("linkedinUrl", e.target.value)}
               />
             </div>
             {error && (
